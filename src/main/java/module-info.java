@@ -1,8 +1,10 @@
-module com.example.java_project {
+module app {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.sql;
 
-
-    opens com.example.java_project to javafx.fxml;
-    exports com.example.java_project;
+    opens app to javafx.fxml;
+    opens app.controller to javafx.fxml;
+    exports app;
+    exports app.controller;
 }
