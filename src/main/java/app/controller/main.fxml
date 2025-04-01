@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="app.controller.MainController">
+    <top>
+        <VBox>
+            <MenuBar>
+                <menus>
+                    <Menu mnemonicParsing="false" text="系统">
+                        <items>
+                            <MenuItem mnemonicParsing="false" onAction="#handleUserInfo" text="个人信息" />
+                            <SeparatorMenuItem mnemonicParsing="false" />
+                            <MenuItem mnemonicParsing="false" onAction="#handleLogout" text="退出登录" />
+                        </items>
+                    </Menu>
+                    <Menu mnemonicParsing="false" text="设备">
+                        <items>
+                            <MenuItem fx:id="addDeviceMenuItem" mnemonicParsing="false" onAction="#handleAddDevice" text="添加设备" />
+                            <MenuItem mnemonicParsing="false" onAction="#handleRefreshDevices" text="刷新列表" />
+                        </items>
+                    </Menu>
+                    <Menu mnemonicParsing="false" text="借用">
+                        <items>
+                            <MenuItem mnemonicParsing="false" onAction="#handleMyBorrowings" text="我的借用" />
+                            <MenuItem fx:id="approvalsMenuItem" mnemonicParsing="false" onAction="#handleApprovals" text="待审批" />
+                        </items>
+                    </Menu>
+                </menus>
+            </MenuBar>
+            <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #f0f0f0; -fx-padding: 5px;">
+                <Label text="当前用户：" />
+                <Label fx:id="currentUserLabel" text="未登录" />
+                <Label text="身份：" />
+                <Label fx:id="userRoleLabel" text="未知" />
+                <Pane HBox.hgrow="ALWAYS" />
+                <TextField fx:id="searchField" promptText="搜索设备..." />
+                <Button mnemonicParsing="false" onAction="#handleSearch" text="搜索" />
+            </HBox>
+        </VBox>
+    </top>
+    
+    <center>
+        <TableView fx:id="deviceTableView" prefHeight="400.0" prefWidth="600.0">
+            <columns>
+                <TableColumn fx:id="deviceIdColumn" prefWidth="75.0" text="ID" />
+                <TableColumn fx:id="deviceNameColumn" prefWidth="150.0" text="设备名称" />
+                <TableColumn fx:id="deviceTypeColumn" prefWidth="100.0" text="设备类型" />
+                <TableColumn fx:id="statusColumn" prefWidth="100.0" text="状态" />
+                <TableColumn fx:id="currentUserColumn" prefWidth="120.0" text="当前使用者" />
+                <TableColumn fx:id="operationColumn" prefWidth="150.0" text="操作" />
+            </columns>
+        </TableView>
+    </center>
+    
+    <bottom>
+        <HBox alignment="CENTER" spacing="15" style="-fx-padding: 10px;">
+            <Button mnemonicParsing="false" onAction="#handleBorrowDevice" text="申请借用" />
+            <Button mnemonicParsing="false" onAction="#handleReturnDevice" text="归还设备" />
+            <Button fx:id="adminButton" mnemonicParsing="false" onAction="#handleAdminPanel" text="管理面板" visible="false" />
+        </HBox>
+    </bottom>
+</BorderPane>
