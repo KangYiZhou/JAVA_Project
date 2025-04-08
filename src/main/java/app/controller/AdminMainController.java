@@ -1,6 +1,9 @@
 package app.controller;
 
+import java.util.List;
 import java.util.logging.Logger;
+
+import app.entity.Device;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -90,6 +93,7 @@ public class AdminMainController implements Initializable {
     public void setAdminInfo(String username) {
         this.adminUsername = username;
         adminInfoLabel.setText("欢迎, " + username);
+        LOGGER.info("管理员信息已设置: " + username);
     }
     
     private void setupDeviceTable() {
@@ -110,23 +114,35 @@ public class AdminMainController implements Initializable {
     }
     
     private void loadDeviceData() {
-        // TODO: 从数据库加载设备数据
+        
     }
     
     private void loadRequestData() {
         // TODO: 从数据库加载借用申请数据
+        try {
+            // TODO: 从数据库加载借用申请数据
+            // 示例：requestTableView.setItems(FXCollections.observableArrayList(requestService.getAllRequests()));
+        } catch (Exception e) {
+            showAlert("错误", "加载借用申请数据失败：" + e.getMessage());
+        }
     }
     
     private void loadReturnData() {
         // TODO: 从数据库加载归还管理数据
+        try {
+            // TODO: 从数据库加载归还管理数据
+            // 示例：returnTableView.setItems(FXCollections.observableArrayList(returnService.getAllReturns()));
+        } catch (Exception e) {
+            showAlert("错误", "加载归还管理数据失败：" + e.getMessage());
+        }
     }
-    
+
     @FXML
     protected void handleLogout() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/login.fxml"));
             Parent root = loader.load();
-            
+
             Stage stage = (Stage) adminInfoLabel.getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setTitle("设备管理系统 - 登录");
@@ -135,7 +151,7 @@ public class AdminMainController implements Initializable {
             stage.setWidth(600);
             stage.setHeight(400);
             stage.centerOnScreen();
-            
+
         } catch (IOException e) {
             showAlert("错误", "返回登录界面失败：" + e.getMessage());
         }
@@ -182,27 +198,24 @@ public class AdminMainController implements Initializable {
     protected void handleRefreshRequests() {
         loadRequestData();
     }
-    
+
     @FXML
     protected void handleExitAdminPanel() {
         try {
             // 加载主界面
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Main.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/main.fxml"));
             Parent root = loader.load();
             
-            // 获取主界面控制器
+            // 不需要手动传递用户信息，会话管理器已保存
             MainController controller = loader.getController();
+            // 确保UI更新
+            controller.updateUIFromSession();
             
-            // 初始化主界面控制器中的管理员信息
-            if (adminUsername != null) {
-                controller.initUserData(adminUsername, true);
-            }
-            
-            // 切换场景
             Stage stage = (Stage) adminInfoLabel.getScene().getWindow();
-            stage.setTitle("设备管理系统");
             Scene scene = new Scene(root);
+            stage.setTitle("设备管理系统");
             stage.setScene(scene);
+            stage.setMaximized(true);
             
             LOGGER.info("管理员已退出管理面板，返回主界面");
         } catch (IOException e) {

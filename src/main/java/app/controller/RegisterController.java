@@ -11,6 +11,8 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import app.service.DeviceManagementService;
+import app.entity.User;
 
 public class RegisterController implements Initializable {
     @FXML
@@ -64,15 +66,24 @@ public class RegisterController implements Initializable {
         }
         
         // 真实系统中，这里应保存用户到数据库
+        DeviceManagementService service = new DeviceManagementService();
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setRole(userType);
         // 模拟注册成功
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("注册成功");
-        alert.setHeaderText(null);
-        alert.setContentText("账户已创建成功，请返回登录！");
-        alert.showAndWait();
-        
-        // 返回登录界面
-        goToLogin();
+        if (service.registerUser(user)) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("注册成功");
+            alert.setHeaderText(null);
+            alert.setContentText("账户已创建成功，请返回登录！");
+            alert.showAndWait();
+
+            // 返回登录界面
+            goToLogin();
+        } else {
+            messageLabel.setText("注册失败，请重试！");
+        }
     }
     
     @FXML
@@ -95,4 +106,5 @@ public class RegisterController implements Initializable {
             e.printStackTrace();
         }
     }
+
 }
