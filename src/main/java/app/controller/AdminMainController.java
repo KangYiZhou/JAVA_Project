@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import app.entity.Device;
+import app.entity.User;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -18,6 +20,11 @@ import app.service.DeviceManagementService;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.ArrayList;
+import java.util.Optional;
+import javafx.geometry.Insets;
+import javafx.scene.layout.GridPane;
+import javafx.application.Platform;
 
 public class AdminMainController implements Initializable {
     
@@ -84,11 +91,13 @@ public class AdminMainController implements Initializable {
         setupDeviceTable();
         setupRequestTable();
         setupReturnTable();
+        setupUserTable(); // 添加用户表格初始化
         
         // 加载数据
         loadDeviceData();
         loadRequestData();
         loadReturnData();
+        loadUsers(); // 加载用户数据
     }
     
     public void setAdminInfo(String username) {
@@ -177,10 +186,45 @@ public class AdminMainController implements Initializable {
     
     @FXML
     protected void handleAdminSearch() {
-        String keyword = adminSearchField.getText().trim();
+        String keyword = adminSearchField.getText().trim().toLowerCase();
         String status = adminDeviceStatusFilter.getValue();
         
-        // TODO: 根据关键字和状态过滤设备
+        try {
+            // 获取所有设备
+            DeviceManagementService service = new DeviceManagementService();
+            List<Device> allDevices = service.getAllDevices();
+            List<Device> filteredDevices = new ArrayList<>();
+            
+            // 根据关键字和状态进行过滤
+            for (Device device : allDevices) {
+                boolean matchesKeyword = keyword.isEmpty() || 
+                                        device.getName().toLowerCase().contains(keyword) ||
+                                        device.getType().toLowerCase().contains(keyword) ||
+                                        device.getModel().toLowerCase().contains(keyword) ||
+                                        (device.getManufacturer() != null && 
+                                         device.getManufacturer().toLowerCase().contains(keyword));
+                
+                boolean matchesStatus = "全部".equals(status) || 
+                                       (device.getStatus() != null && device.getStatus().equals(status));
+                
+                if (matchesKeyword && matchesStatus) {
+                    filteredDevices.add(device);
+                }
+            }
+            
+            // 更新表格显示
+            adminDeviceTableView.getItems().clear();
+            adminDeviceTableView.getItems().addAll(filteredDevices);
+            
+            System.out.println("搜索结果: 找到 " + filteredDevices.size() + " 个设备");
+            
+            if (filteredDevices.isEmpty()) {
+                showAlert("提示", "没有找到符合条件的设备");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("错误", "搜索过程中发生错误: " + e.getMessage());
+        }
     }
     
     @FXML
@@ -255,4 +299,230 @@ public class AdminMainController implements Initializable {
         alert.setContentText(content);
         alert.showAndWait();
     }
+
+
+    @FXML
+    private TableView<User> userTableView; // 从userTable修改为userTableView
+    @FXML
+    private TableColumn<User, Integer> userIdColumn; // 保持不变
+    @FXML
+    private TableColumn<User, String> userNameColumn; // 从usernameColumn修改为userNameColumn
+    @FXML
+    private TableColumn<User, String> userRoleColumn; // 从isAdminColumn修改为userRoleColumn
+    @FXML
+    private TableColumn<User, String> userPasswordColumn;
+    @FXML
+    private TextField userSearchField; // 添加搜索字段引用
+
+    private DeviceManagementService service = new DeviceManagementService();
+
+
+    @FXML
+    private void initializeuser() {
+        userIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        userNameColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
+        userRoleColumn.setCellValueFactory(new PropertyValueFactory<>("isAdmin"));
+        userPasswordColumn.setCellValueFactory(new PropertyValueFactory<>("password"));
+
+        loadUsers();
+    }
+
+    private void loadUsers() {
+        List<User> users = service.getAllUsers();
+        ObservableList<User> userList = FXCollections.observableArrayList(users);
+        userTableView.setItems(userList);
+    }
+
+    
+
+    // 新增用户表格设置方法
+    private void setupUserTable() {
+        userIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        userNameColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
+        userRoleColumn.setCellValueFactory(new PropertyValueFactory<>("role")); // 使用role属性而不是isAdmin
+        userPasswordColumn.setCellValueFactory(new PropertyValueFactory<>("password")); // 添加此行配置密码列
+        
+        // 可选：添加删除按钮列
+        TableColumn<User, Void> actionColumn = new TableColumn<>("操作");
+        actionColumn.setPrefWidth(100);
+        actionColumn.setCellFactory(param -> new TableCell<>() {
+            private final Button deleteButton = new Button("删除");
+            
+            {
+                deleteButton.setOnAction(event -> {
+                    User user = getTableView().getItems().get(getIndex());
+                    handleDeleteUserAction(user);
+                });
+            }
+            
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(deleteButton);
+                }
+            }
+        });
+        
+        userTableView.getColumns().add(actionColumn);
+    }
+
+    @FXML
+    protected void handleUserSearch() {
+        String keyword = userSearchField.getText().trim().toLowerCase();
+        
+        try {
+            DeviceManagementService service = new DeviceManagementService();
+            List<User> allUsers = service.getAllUsers();
+            List<User> filteredUsers = new ArrayList<>();
+            
+            for (User user : allUsers) {
+                if (user.getUsername().toLowerCase().contains(keyword)) {
+                    filteredUsers.add(user);
+                }
+            }
+            
+            userTableView.getItems().clear();
+            userTableView.getItems().addAll(filteredUsers);
+            
+            System.out.println("用户搜索结果: 找到 " + filteredUsers.size() + " 个用户");
+            
+            if (filteredUsers.isEmpty()) {
+                showAlert("提示", "没有找到符合条件的用户");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("错误", "搜索用户过程中发生错误: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    protected void handleUserReset() {
+        userSearchField.clear();
+        loadUsers(); // 重新加载所有用户
+    }
+
+    // 处理删除用户按钮点击
+    @FXML
+    protected void handleDeleteUser() {
+        User selectedUser = userTableView.getSelectionModel().getSelectedItem();
+        handleDeleteUserAction(selectedUser);
+    }
+
+    // 删除用户的实际处理逻辑
+    private void handleDeleteUserAction(User selectedUser) {
+        if (selectedUser == null) {
+            showAlert("提示", "请先选择要删除的用户");
+            return;
+        }
+        
+        // 确认删除对话框
+        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmDialog.setTitle("确认删除");
+        confirmDialog.setHeaderText("删除用户");
+        confirmDialog.setContentText("您确定要删除用户 " + selectedUser.getUsername() + " 吗？");
+        
+        confirmDialog.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                try {
+                    DeviceManagementService service = new DeviceManagementService();
+                    boolean success = service.deleteUser(selectedUser.getId());
+                    
+                    if (success) {
+                        loadUsers(); // 重新加载用户列表
+                        showAlert("成功", "用户已成功删除");
+                    } else {
+                        showAlert("错误", "删除用户失败，请重试");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    showAlert("错误", "删除用户时发生异常: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    @FXML
+    protected void handleAddUser() {
+        // 创建一个对话框
+        Dialog<User> dialog = new Dialog<>();
+        dialog.setTitle("添加新用户");
+        dialog.setHeaderText("请输入新用户的信息");
+        
+        // 设置按钮
+        ButtonType addButtonType = new ButtonType("添加", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+        
+        // 创建表单内容
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("用户名");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("密码");
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll("普通用户", "管理员");
+        roleComboBox.setValue("普通用户");
+        
+        grid.add(new Label("用户名:"), 0, 0);
+        grid.add(usernameField, 1, 0);
+        grid.add(new Label("密码:"), 0, 1);
+        grid.add(passwordField, 1, 1);
+        grid.add(new Label("用户身份:"), 0, 2);
+        grid.add(roleComboBox, 1, 2);
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // 请求焦点在用户名字段
+        Platform.runLater(() -> usernameField.requestFocus());
+        
+        // 设置结果转换器
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                String username = usernameField.getText().trim();
+                String password = passwordField.getText().trim();
+                String role = roleComboBox.getValue();
+                
+                if (username.isEmpty() || password.isEmpty()) {
+                    showAlert("错误", "用户名和密码不能为空");
+                    return null;
+                }
+                
+                // 创建新用户
+                User newUser = new User();
+                newUser.setUsername(username);
+                newUser.setPassword(password);
+                newUser.setRole(role);
+                
+                return newUser;
+            }
+            return null;
+        });
+        
+        // 显示对话框并处理结果
+        Optional<User> result = dialog.showAndWait();
+        
+        result.ifPresent(user -> {
+            try {
+                DeviceManagementService service = new DeviceManagementService();
+                boolean success = service.registerUser(user);
+                
+                if (success) {
+                    loadUsers(); // 重新加载用户列表
+                    showAlert("成功", "用户 " + user.getUsername() + " 已成功添加");
+                } else {
+                    showAlert("错误", "添加用户失败，可能用户名已存在");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                showAlert("错误", "添加用户时发生异常: " + e.getMessage());
+            }
+        });
+    }
+
 }

@@ -23,7 +23,7 @@ public class AdminUserManagementController {
     private DeviceManagementService service = new DeviceManagementService();
 
     @FXML
-    private void initialize() {
+    private void initializeuser() {
         userIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         usernameColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
         isAdminColumn.setCellValueFactory(new PropertyValueFactory<>("isAdmin"));
