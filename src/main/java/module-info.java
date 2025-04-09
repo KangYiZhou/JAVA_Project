@@ -5,6 +5,7 @@ module app {
 
     opens app to javafx.fxml;
     opens app.controller to javafx.fxml;
+    opens app.entity to javafx.base;
     exports app;
     exports app.controller;
 }

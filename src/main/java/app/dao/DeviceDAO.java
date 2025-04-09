@@ -17,21 +17,32 @@ public class DeviceDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
+            
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String name = rs.getString("name");
                 String type = rs.getString("type");
                 String model = rs.getString("model");
                 String manufacturer = rs.getString("manufacturer");
-                LocalDate purchaseDate = rs.getDate("purchase_date").toLocalDate();
+                // 修复空指针问题
+                LocalDate purchaseDate = null;
+                if(rs.getDate("purchase_date") != null) {
+                    purchaseDate = rs.getDate("purchase_date").toLocalDate();
+                }
                 String status = rs.getString("status");
                 String description = rs.getString("description");
+                
                 Device device = new Device(id, name, type, model, manufacturer, purchaseDate, status, description);
                 devices.add(device);
+                
+                // 添加调试语句
+                System.out.println("加载设备: " + name);
             }
         } catch (SQLException e) {
+            System.out.println("加载设备出错: " + e.getMessage());
             e.printStackTrace();
         }
+        System.out.println("总计加载了 " + devices.size() + " 个设备");
         return devices;
     }
 

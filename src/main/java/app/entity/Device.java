@@ -13,7 +13,7 @@ public class Device {
     private String description;
 
     // 构造函数、Getter和Setter方法
-    public Device() {}
+   
 
     public Device(int id, String name, String type, String model, String manufacturer, LocalDate purchaseDate, String status, String description) {
         this.id = id;

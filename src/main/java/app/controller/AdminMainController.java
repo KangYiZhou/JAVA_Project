@@ -14,6 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
+import app.service.DeviceManagementService;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -114,7 +115,24 @@ public class AdminMainController implements Initializable {
     }
     
     private void loadDeviceData() {
-        
+        try {
+            System.out.println("管理员界面：开始加载设备数据...");
+            DeviceManagementService service = new DeviceManagementService();
+            List<Device> devices = service.getAllDevices();
+            
+            if (devices.isEmpty()) {
+                System.out.println("管理员界面：没有找到设备数据");
+            } else {
+                System.out.println("管理员界面：成功加载 " + devices.size() + " 个设备");
+                adminDeviceTableView.getItems().clear();
+                adminDeviceTableView.getItems().addAll(devices);
+                adminDeviceTableView.refresh();
+            }
+        } catch (Exception e) {
+            System.out.println("管理员界面：加载设备数据时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("错误", "加载设备数据失败：" + e.getMessage());
+        }
     }
     
     private void loadRequestData() {

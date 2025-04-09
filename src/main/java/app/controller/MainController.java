@@ -19,6 +19,10 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.List;
+import javafx.collections.ObservableList;
+import app.service.DeviceManagementService;
+import java.time.LocalDate;
 
 public class MainController implements Initializable {
     @FXML
@@ -72,7 +76,7 @@ public class MainController implements Initializable {
         deviceNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         deviceTypeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
-        currentUserColumn.setCellValueFactory(new PropertyValueFactory<>("currentUser"));
+
         // 后续可加载数据
         loadDeviceData();
         // 初始化时从SessionManager获取用户信息
@@ -82,20 +86,26 @@ public class MainController implements Initializable {
     // 更新为公开方法，可以从其他控制器调用
     public void updateUIFromSession() {
         SessionManager session = SessionManager.getInstance();
-
-        if (session.isLoggedIn()) {
+        
+        boolean loggedIn = session.isLoggedIn();
+        LOGGER.info("用户是否登录: " + loggedIn);
+        
+        if (loggedIn) {
             String username = session.getCurrentUsername();
             boolean isAdmin = session.isAdmin();
-
-            LOGGER.info("从会话加载用户信息: " + username + ", 管理员: " + isAdmin);
-
+            
+            LOGGER.info("当前用户: " + username + ", 是否是管理员: " + isAdmin);
+            LOGGER.info("添加设备菜单是否可见: " + addDeviceMenuItem.isVisible());
+            
             currentUserLabel.setText(username);
             userRoleLabel.setText(isAdmin ? "管理员" : "普通用户");
-
+            
             // 设置管理员特定UI元素可见性
             addDeviceMenuItem.setVisible(isAdmin);
             approvalsMenuItem.setVisible(isAdmin);
             adminButton.setVisible(isAdmin);
+            
+            LOGGER.info("设置后添加设备菜单是否可见: " + addDeviceMenuItem.isVisible());
         } else {
             currentUserLabel.setText("未登录");
             userRoleLabel.setText("");
@@ -114,13 +124,38 @@ public class MainController implements Initializable {
     }
 
     private void loadDeviceData() {
-
+        try {
+            System.out.println("开始加载设备数据...");
+            DeviceManagementService service = new DeviceManagementService();
+            List<Device> devices = service.getAllDevices();
+            
+            if (devices.isEmpty()) {
+                System.out.println("没有找到设备数据");
+            } else {
+                // 检查第一个设备数据
+                Device firstDevice = devices.get(0);
+                System.out.println("首个设备信息: ID=" + firstDevice.getId() + ", 名称=" + firstDevice.getName());
+                
+                // 清空并添加新数据
+                deviceTableView.getItems().clear();
+                deviceTableView.getItems().addAll(devices);
+                
+                // 强制刷新表格
+                deviceTableView.refresh();
+                System.out.println("表格中设备数量: " + deviceTableView.getItems().size());
+            }
+        } catch (Exception e) {
+            System.out.println("加载设备数据时发生错误: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @FXML
     protected void handleUserInfo() {
         // 显示用户信息
     }
+
+
 
     @FXML
     protected void handleLogout() {

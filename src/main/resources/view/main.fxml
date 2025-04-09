@@ -50,8 +50,7 @@
                 <TableColumn fx:id="deviceNameColumn" prefWidth="150.0" text="设备名称" />
                 <TableColumn fx:id="deviceTypeColumn" prefWidth="100.0" text="设备类型" />
                 <TableColumn fx:id="statusColumn" prefWidth="100.0" text="状态" />
-                <TableColumn fx:id="currentUserColumn" prefWidth="120.0" text="当前使用者" />
-                <TableColumn fx:id="operationColumn" prefWidth="150.0" text="操作" />
+
             </columns>
         </TableView>
     </center>

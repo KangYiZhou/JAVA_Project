@@ -24,11 +24,6 @@ public class LoginController {
     @FXML
     private Label messageLabel;
 
-    // 假设的用户数据 - 实际项目中会从数据库获取
-    private final String ADMIN_USER = "admin";
-    private final String ADMIN_PASS = "admin123";
-    private final String NORMAL_USER = "user";
-    private final String NORMAL_PASS = "user123";
 
     @FXML
     protected void handleLogin() {
