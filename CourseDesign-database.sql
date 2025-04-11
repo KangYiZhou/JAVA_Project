@@ -1,92 +1,78 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS courseDesign DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-# 创建数据库
+-- 使用数据库
+USE courseDesign;
 
-
-create database if not exists courseDesign;
-
-use courseDesign;
-
-
-# 普通用户表
-drop table if exists user;
-
-create table if not exists user(
-                                   Uid int primary key auto_increment,
-                                   UName varchar(50) not null unique ,
-                                   UPwd varchar(50) not null,
-                                   URole varchar(20) not null default'student',
-                                   UQuestion varchar(50),
-                                   UAnswer varchar(50)
+-- 创建用户表
+CREATE TABLE IF NOT EXISTS users (
+    Uid INT PRIMARY KEY AUTO_INCREMENT,
+    UName VARCHAR(50) NOT NULL UNIQUE,
+    UPwd VARCHAR(50) NOT NULL,
+    URole VARCHAR(20) NOT NULL DEFAULT '普通用户',  -- '管理员'或'普通用户'
+    UQuestion VARCHAR(100),
+    UAnswer VARCHAR(100),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-# 管理员用户表，不对外开放,只支持在数据库中增删改查
-
-drop table if exists administrator;
-
-create table if not exists administrator(
-                                            id int primary key auto_increment,
-                                            name varchar(10) not null unique ,
-                                            password varchar(10) not null
+-- 创建设备表
+CREATE TABLE IF NOT EXISTS devices (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    model VARCHAR(50),
+    manufacturer VARCHAR(100),
+    purchase_date DATE,
+    status VARCHAR(20) NOT NULL DEFAULT '空闲',  -- '空闲'、'已借出'、'维修中'
+    description TEXT,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-# 设备表
-
-drop table if exists equipment;
-
-create table if not exists equipment(
-                                        EId int primary key auto_increment,
-                                        EName varchar(50) not null ,
-                                        EStatus varchar(50) not null default'avaiable',
-                                        EDescription varchar(99)
+-- 创建借用申请表
+CREATE TABLE IF NOT EXISTS borrowrequests (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    device_id INT NOT NULL,
+    user_id INT NOT NULL,
+    borrow_date DATE NOT NULL,
+    expected_return_date DATE NOT NULL,
+    actual_return_date DATE,
+    purpose VARCHAR(255),
+    status VARCHAR(20) NOT NULL DEFAULT '待审批', -- '待审批'、'已批准'、'已拒绝'、'已借出'、'已归还'
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (device_id) REFERENCES devices(id),
+    FOREIGN KEY (user_id) REFERENCES users(Uid)
 );
 
+-- 添加索引以提高查询性能
+CREATE INDEX idx_device_status ON devices(status);
+CREATE INDEX idx_borrowrequest_status ON borrowrequests(status);
+CREATE INDEX idx_borrowrequest_user ON borrowrequests(user_id);
+CREATE INDEX idx_borrowrequest_device ON borrowrequests(device_id);
 
-# 借用记录表
+-- 初始化数据 - 添加默认管理员账户
+INSERT INTO users (UName, UPwd, URole, UQuestion, UAnswer) 
+VALUES ('admin', '123456', '管理员', '这是管理员账号的密保问题', '这是答案');
 
-drop table if exists equipmentBorrow;
+-- 初始化数据 - 添加一个测试用普通用户
+INSERT INTO users (UName, UPwd, URole, UQuestion, UAnswer) 
+VALUES ('test', '123456', '普通用户', '这是测试账号的密保问题', '这是答案');
 
-CREATE TABLE Borrow_records (
-                                BId INT AUTO_INCREMENT PRIMARY KEY,
-                                UId INT NOT NULL,
-                                EId INT NOT NULL,
-                                BBorrowTime DATE NOT NULL,
-                                BReturnTime DATE,
-                                BStatus VARCHAR(50) DEFAULT 'pending',
-    -- 定义外键约束，UId引用用户表中的用户编号字段（假设用户表名为Users，字段名为UId）
-                                FOREIGN KEY (UId) REFERENCES user (UId),
-    -- 定义外键约束，EId引用设备表中的设备编号字段（假设设备表名为Equipment，字段名为EId）
-                                FOREIGN KEY (EId) REFERENCES Equipment(EId)
-);
+-- 初始化数据 - 添加一些测试设备
+INSERT INTO devices (name, type, model, manufacturer, purchase_date, status, description) VALUES
+('笔记本电脑', '电脑', 'ThinkPad X1', 'Lenovo', '2023-01-15', '空闲', '高性能商务笔记本电脑'),
+('投影仪', '办公设备', 'Epson EB-U05', 'Epson', '2023-02-20', '空闲', '高清投影仪，1920×1080分辨率'),
+('打印机', '办公设备', 'HP LaserJet Pro M15w', 'HP', '2023-03-10', '空闲', '黑白激光打印机'),
+('平板电脑', '移动设备', 'iPad Pro', 'Apple', '2023-04-05', '空闲', '12.9英寸，2021款'),
+('显示器', '电脑外设', 'Dell U2720Q', 'Dell', '2023-05-12', '空闲', '27英寸4K显示器');
 
-# 设备信息表
+-- 初始化数据 - 添加一些测试借用申请记录
+INSERT INTO borrowrequests (device_id, user_id, borrow_date, expected_return_date, purpose, status) VALUES
+(1, 2, '2023-06-01', '2023-06-10', '项目演示需要', '待审批'),
+(2, 2, '2023-06-05', '2023-06-15', '会议演示', '已批准'),
+(3, 2, '2023-05-20', '2023-06-20', '文档打印', '已归还');
 
-drop table if exists equipmentType;
-
-create table if not exists equipmentType(
-                                            Lid integer primary key  auto_increment,
-                                            LName varchar(50) not null,
-                                            Ltype varchar(50),
-                                            LQuantity integer not null,
-                                            LManufacturer varchar(50),
-                                            LPurchasedate date,
-                                            LWarrantyperiod integer,
-                                            LLocation varchar(50),
-                                            LRemarks varchar(50)
-);
-
-# 用户信息表
-
-drop table if exists BorrowPeopel;
-
-create table if not exists BorrowPeopel(
-                                           UId integer primary key ,
-                                           UGender varchar(4) not null default'male',
-                                           UProvince varchar(20) not null,
-                                           Ucity varchar(20) not null,
-                                           UContact varchar(20) not null,
-                                           UName varchar(20) not null,
-                                           UAddress varchar(50) not null,
-                                           UStudentId varchar(20) not null,
-                                           UEmail varchar(20) not null,
-                                           UCredit varchar(20)
-);
+-- 已归还的设备添加实际归还日期
+UPDATE borrowrequests SET actual_return_date = '2023-06-18' WHERE id = 3;
