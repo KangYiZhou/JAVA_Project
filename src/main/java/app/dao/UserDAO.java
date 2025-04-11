@@ -89,4 +89,21 @@ public class UserDAO {
             return false;
         }
     }
+
+    // 添加到UserDAO类中
+    public boolean updateUser(User user) {
+        String sql = "UPDATE users SET UPwd=?, UQuestion=?, UAnswer=? WHERE Uid=?";
+        try (Connection conn = DBConnection.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, user.getPassword());
+            pstmt.setString(2, user.getQuestion());
+            pstmt.setString(3, user.getAnswer());
+            pstmt.setInt(4, user.getId());
+            int rows = pstmt.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "更新用户信息失败", e);
+            return false;
+        }
+    }
 }

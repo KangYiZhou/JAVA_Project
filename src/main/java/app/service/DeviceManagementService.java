@@ -46,13 +46,40 @@ public class DeviceManagementService {
         return userDAO.registerUser(user);
     }
 
+    // 添加借用申请
     public boolean addBorrowRequest(int deviceId, int userId, LocalDate borrowDate, LocalDate returnDate, String purpose) {
-        BorrowRequest request = new BorrowRequest(0, deviceId, userId, borrowDate, returnDate, purpose, "待审批");
+        BorrowRequest request = new BorrowRequest();
+        request.setDeviceId(deviceId);
+        request.setUserId(userId);
+        request.setBorrowDate(borrowDate);
+        request.setReturnDate(returnDate);
+        request.setPurpose(purpose);
+        request.setStatus("待审批");
         return borrowRequestDAO.addBorrowRequest(request);
     }
 
-    public List<BorrowRequest> getBorrowRequestsByStatus(String status) {
-        return borrowRequestDAO.getBorrowRequestsByStatus(status);
+    // 获取所有借用申请
+    public List<BorrowRequest> getAllRequests() {
+        return borrowRequestDAO.getAllRequests();
+    }
+
+    // 根据状态获取借用申请
+    public List<BorrowRequest> getRequestsByStatus(String status) {
+        return borrowRequestDAO.getRequestsByStatus(status);
+    }
+
+    // 更新借用申请状态
+    public boolean approveRequest(int requestId) {
+        return borrowRequestDAO.updateRequestStatus(requestId, "已批准");
+    }
+
+    public boolean rejectRequest(int requestId) {
+        return borrowRequestDAO.updateRequestStatus(requestId, "已拒绝");
+    }
+
+    // 处理设备归还
+    public boolean returnDevice(int requestId) {
+        return borrowRequestDAO.returnDevice(requestId, LocalDate.now());
     }
 
     // 新增方法：获取所有用户
@@ -65,7 +92,10 @@ public class DeviceManagementService {
         return userDAO.deleteUser(userId);
     }
 
-    
+    // 添加删除设备的方法
+    public boolean deleteDevice(int deviceId) {
+        return deviceDAO.deleteDevice(deviceId);
+    }
 
     // 如果需要使用Map方式添加设备，使用不同名称的方法
     public boolean addDeviceFromMap(Map<String, Object> deviceData) {
@@ -117,5 +147,20 @@ public class DeviceManagementService {
             LOGGER.log(Level.SEVERE, "更新设备失败", e);
             return false;
         }
+    }
+
+    /**
+     * 根据用户ID获取该用户的所有借用申请
+     * @param userId 用户ID
+     * @return 借用申请列表
+     */
+    public List<BorrowRequest> getRequestsByUserId(int userId) {
+        BorrowRequestDAO borrowRequestDAO = new BorrowRequestDAO();
+        return borrowRequestDAO.getRequestsByUserId(userId);
+    }
+
+    // 添加到DeviceManagementService类中
+    public boolean updateUser(User user) {
+        return userDAO.updateUser(user);
     }
 }

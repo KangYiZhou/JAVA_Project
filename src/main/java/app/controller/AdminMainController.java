@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import app.entity.Device;
 import app.entity.User;
+import app.entity.BorrowRequest;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -22,9 +23,12 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.geometry.Insets;
 import javafx.scene.layout.GridPane;
 import javafx.application.Platform;
+import javafx.scene.layout.HBox;
 
 public class AdminMainController implements Initializable {
     
@@ -63,13 +67,61 @@ public class AdminMainController implements Initializable {
     private TabPane adminTabPane;
     
     @FXML
-    private TableView requestTableView;
+    private TableView<BorrowRequest> requestTableView;
+    
+    @FXML
+    private TableColumn<BorrowRequest, Integer> requestIdColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> requestUserColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> requestDeviceColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> requestDateColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> requestReturnDateColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> requestPurposeColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> requestStatusColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> requestActionColumn;
     
     @FXML
     private ComboBox<String> requestStatusFilter;
     
     @FXML
-    private TableView returnTableView;
+    private TableView<BorrowRequest> returnTableView;
+    
+    @FXML
+    private TableColumn<BorrowRequest, Integer> returnIdColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> returnUserColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> returnDeviceColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> borrowingDateColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> expectedReturnDateColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> actualReturnDateColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> returnStatusColumn;
+    
+    @FXML
+    private TableColumn<BorrowRequest, String> returnActionColumn;
     
     private String adminUsername;
     
@@ -83,7 +135,7 @@ public class AdminMainController implements Initializable {
         
         // 初始化请求状态过滤选项
         requestStatusFilter.setItems(FXCollections.observableArrayList(
-            "全部", "待审批", "已批准", "已拒绝"
+            "全部", "待审批", "已批准", "已拒绝","已归还"
         ));
         requestStatusFilter.setValue("待审批");
         
@@ -112,17 +164,128 @@ public class AdminMainController implements Initializable {
         adminTypeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         adminModelColumn.setCellValueFactory(new PropertyValueFactory<>("model"));
         adminStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
-        // 操作列需要单独设置，添加编辑和删除按钮
+        
+        // 配置操作列，添加删除设备和修改状态按钮
+        adminActionColumn.setCellFactory(param -> new TableCell<Device, String>() {
+            private final Button deleteBtn = new Button("删除");
+            private final Button statusBtn = new Button("修改状态");
+            private final HBox buttonBox = new HBox(5, deleteBtn, statusBtn);
+            
+            {
+                // 设置删除按钮点击事件
+                deleteBtn.setOnAction(event -> {
+                    Device device = getTableView().getItems().get(getIndex());
+                    handleDeleteDevice(device);
+                });
+                
+                // 设置修改状态按钮点击事件
+                statusBtn.setOnAction(event -> {
+                    Device device = getTableView().getItems().get(getIndex());
+                    handleChangeDeviceStatus(device);
+                });
+                
+                // 设置按钮样式
+                deleteBtn.getStyleClass().add("delete-button");
+                statusBtn.getStyleClass().add("edit-button");
+                buttonBox.setAlignment(javafx.geometry.Pos.CENTER);
+            }
+            
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(buttonBox);
+                }
+            }
+        });
     }
     
     private void setupRequestTable() {
-        // 设置借用申请表格的列映射
+        requestIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        requestUserColumn.setCellValueFactory(new PropertyValueFactory<>("userName"));
+        requestDeviceColumn.setCellValueFactory(new PropertyValueFactory<>("deviceName"));
+        requestDateColumn.setCellValueFactory(new PropertyValueFactory<>("borrowDate"));
+        requestReturnDateColumn.setCellValueFactory(new PropertyValueFactory<>("returnDate"));
+        requestPurposeColumn.setCellValueFactory(new PropertyValueFactory<>("purpose"));
+        requestStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        
+        requestActionColumn.setCellFactory(param -> new TableCell<BorrowRequest, String>() {
+            private final Button approveBtn = new Button("批准");
+            private final Button rejectBtn = new Button("拒绝");
+            private final HBox buttonBox = new HBox(5, approveBtn, rejectBtn);
+            
+            {
+                approveBtn.setOnAction(event -> {
+                    BorrowRequest request = getTableView().getItems().get(getIndex());
+                    handleApproveRequest(request);
+                });
+                
+                rejectBtn.setOnAction(event -> {
+                    BorrowRequest request = getTableView().getItems().get(getIndex());
+                    handleRejectRequest(request);
+                });
+                
+                buttonBox.setAlignment(javafx.geometry.Pos.CENTER);
+            }
+            
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    BorrowRequest request = getTableView().getItems().get(getIndex());
+                    if ("待审批".equals(request.getStatus())) {
+                        setGraphic(buttonBox);
+                    } else {
+                        setGraphic(new Label(request.getStatus()));
+                    }
+                }
+            }
+        });
     }
-    
+
     private void setupReturnTable() {
-        // 设置归还管理表格的列映射
+        returnIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        returnUserColumn.setCellValueFactory(new PropertyValueFactory<>("userName"));
+        returnDeviceColumn.setCellValueFactory(new PropertyValueFactory<>("deviceName"));
+        borrowingDateColumn.setCellValueFactory(new PropertyValueFactory<>("borrowDate"));
+        expectedReturnDateColumn.setCellValueFactory(new PropertyValueFactory<>("returnDate"));
+        actualReturnDateColumn.setCellValueFactory(new PropertyValueFactory<>("actualReturnDate"));
+        returnStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        
+        returnActionColumn.setCellFactory(param -> new TableCell<BorrowRequest, String>() {
+            private final Button returnBtn = new Button("确认归还");
+            
+            {
+                returnBtn.setOnAction(event -> {
+                    BorrowRequest request = getTableView().getItems().get(getIndex());
+                    handleReturnDevice(request);
+                });
+            }
+            
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    BorrowRequest request = getTableView().getItems().get(getIndex());
+                    if ("已批准".equals(request.getStatus()) || "已借出".equals(request.getStatus())) {
+                        setGraphic(returnBtn);
+                    } else {
+                        setGraphic(null);
+                    }
+                }
+            }
+        });
     }
-    
+
     private void loadDeviceData() {
         try {
             System.out.println("管理员界面：开始加载设备数据...");
@@ -145,22 +308,36 @@ public class AdminMainController implements Initializable {
     }
     
     private void loadRequestData() {
-        // TODO: 从数据库加载借用申请数据
         try {
-            // TODO: 从数据库加载借用申请数据
-            // 示例：requestTableView.setItems(FXCollections.observableArrayList(requestService.getAllRequests()));
+            DeviceManagementService service = new DeviceManagementService();
+            String status = requestStatusFilter.getValue();
+            List<BorrowRequest> requests;
+            
+            if ("全部".equals(status)) {
+                requests = service.getAllRequests();
+            } else {
+                requests = service.getRequestsByStatus(status);
+            }
+            
+            requestTableView.getItems().clear();
+            requestTableView.getItems().addAll(requests);
         } catch (Exception e) {
             showAlert("错误", "加载借用申请数据失败：" + e.getMessage());
         }
     }
     
     private void loadReturnData() {
-        // TODO: 从数据库加载归还管理数据
         try {
-            // TODO: 从数据库加载归还管理数据
-            // 示例：returnTableView.setItems(FXCollections.observableArrayList(returnService.getAllReturns()));
+            DeviceManagementService service = new DeviceManagementService();
+            // 获取已批准或已借出的请求
+            List<BorrowRequest> requests = new ArrayList<>();
+            requests.addAll(service.getRequestsByStatus("已批准"));
+            requests.addAll(service.getRequestsByStatus("已借出"));
+            
+            returnTableView.getItems().clear();
+            returnTableView.getItems().addAll(requests);
         } catch (Exception e) {
-            showAlert("错误", "加载归还管理数据失败：" + e.getMessage());
+            showAlert("错误", "加载设备归还数据失败：" + e.getMessage());
         }
     }
 
@@ -525,4 +702,174 @@ public class AdminMainController implements Initializable {
         });
     }
 
+    private void handleDeleteDevice(Device device) {
+        // 确认删除对话框
+        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmDialog.setTitle("确认删除");
+        confirmDialog.setHeaderText("删除设备");
+        confirmDialog.setContentText("您确定要删除设备 '" + device.getName() + "' 吗？此操作不可撤销。");
+        
+        confirmDialog.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                try {
+                    DeviceManagementService service = new DeviceManagementService();
+                    boolean success = service.deleteDevice(device.getId());
+                    
+                    if (success) {
+                        loadDeviceData(); // 重新加载设备列表
+                        showAlert("成功", "设备已成功删除。");
+                    } else {
+                        showAlert("错误", "删除设备失败，请重试。");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    showAlert("错误", "删除设备时发生异常: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    private void handleChangeDeviceStatus(Device device) {
+        // 创建一个对话框
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("修改设备状态");
+        dialog.setHeaderText("请选择设备 '" + device.getName() + "' 的新状态:");
+        
+        // 添加按钮
+        ButtonType saveButtonType = new ButtonType("保存", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+        
+        // 创建状态下拉框
+        ComboBox<String> statusComboBox = new ComboBox<>();
+        statusComboBox.getItems().addAll("空闲", "已借出", "维修中");
+        statusComboBox.setValue(device.getStatus()); // 设置当前状态为默认值
+        
+        // 布局
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        grid.add(new Label("设备状态:"), 0, 0);
+        grid.add(statusComboBox, 1, 0);
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // 设置对话框结果转换器
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                return statusComboBox.getValue();
+            }
+            return null;
+        });
+        
+        // 显示对话框并处理结果
+        Optional<String> result = dialog.showAndWait();
+        
+        result.ifPresent(newStatus -> {
+            try {
+                DeviceManagementService service = new DeviceManagementService();
+                
+                // 创建设备数据更新Map
+                Map<String, Object> deviceData = new HashMap<>();
+                deviceData.put("id", device.getId());
+                deviceData.put("name", device.getName());
+                deviceData.put("type", device.getType());
+                deviceData.put("model", device.getModel());
+                deviceData.put("manufacturer", device.getManufacturer());
+                deviceData.put("purchaseDate", device.getPurchaseDate());
+                deviceData.put("status", newStatus);
+                deviceData.put("description", device.getDescription());
+                
+                boolean success = service.updateDevice(deviceData);
+                
+                if (success) {
+                    loadDeviceData(); // 重新加载设备列表
+                    showAlert("成功", "设备状态已更新为: " + newStatus);
+                } else {
+                    showAlert("错误", "更新设备状态失败，请重试。");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                showAlert("错误", "更新设备状态时发生异常: " + e.getMessage());
+            }
+        });
+    }
+
+    // 批准借用申请
+    private void handleApproveRequest(BorrowRequest request) {
+        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmDialog.setTitle("确认批准");
+        confirmDialog.setHeaderText("批准借用申请");
+        confirmDialog.setContentText("您确定要批准用户 " + request.getUserName() + " 借用设备 " + request.getDeviceName() + " 的申请吗？");
+        
+        confirmDialog.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                DeviceManagementService service = new DeviceManagementService();
+                boolean success = service.approveRequest(request.getId());
+                
+                if (success) {
+                    loadRequestData();
+                    showAlert("成功", "已批准借用申请");
+                } else {
+                    showAlert("错误", "操作失败，请重试");
+                }
+            }
+        });
+    }
+
+    // 拒绝借用申请
+    private void handleRejectRequest(BorrowRequest request) {
+        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmDialog.setTitle("确认拒绝");
+        confirmDialog.setHeaderText("拒绝借用申请");
+        confirmDialog.setContentText("您确定要拒绝用户 " + request.getUserName() + " 借用设备 " + request.getDeviceName() + " 的申请吗？");
+        
+        confirmDialog.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                DeviceManagementService service = new DeviceManagementService();
+                boolean success = service.rejectRequest(request.getId());
+                
+                if (success) {
+                    loadRequestData();
+                    showAlert("成功", "已拒绝借用申请");
+                } else {
+                    showAlert("错误", "操作失败，请重试");
+                }
+            }
+        });
+    }
+
+    // 确认设备归还
+    private void handleReturnDevice(BorrowRequest request) {
+        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmDialog.setTitle("确认归还");
+        confirmDialog.setHeaderText("确认设备归还");
+        confirmDialog.setContentText("您确定要确认用户 " + request.getUserName() + " 归还设备 " + request.getDeviceName() + " 吗？");
+        
+        confirmDialog.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                DeviceManagementService service = new DeviceManagementService();
+                boolean success = service.returnDevice(request.getId());
+                
+                if (success) {
+                    loadReturnData();
+                    showAlert("成功", "已确认设备归还");
+                } else {
+                    showAlert("错误", "操作失败，请重试");
+                }
+            }
+        });
+    }
+
+    // 在AdminMainController.java中添加此方法
+    public void selectRequestTab() {
+        // 选择借用申请审核的选项卡（索引为1，因为它是第二个选项卡）
+        adminTabPane.getSelectionModel().select(1);
+        
+        // 可选：自动筛选为只显示"待审批"状态的申请
+        if (requestStatusFilter != null && requestStatusFilter.getItems() != null) {
+            requestStatusFilter.setValue("待审批");
+            loadRequestData();
+        }
+    }
 }

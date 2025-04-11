@@ -1,5 +1,9 @@
 package app.controller;
 
+import app.entity.BorrowRequest;
+import app.entity.Device;
+import app.service.DeviceManagementService;
+import app.util.SessionManager;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -34,9 +38,8 @@ public class BorrowRequestController implements Initializable {
     @FXML
     private Label messageLabel;
     
-    private int deviceId;
-    private String deviceName;
-    private String currentUsername;
+    private Device device;
+    private DeviceManagementService service = new DeviceManagementService();
     
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -45,14 +48,10 @@ public class BorrowRequestController implements Initializable {
         returnDatePicker.setValue(LocalDate.now().plusDays(7));
     }
     
-    public void setDeviceInfo(int deviceId, String deviceName, String username) {
-        this.deviceId = deviceId;
-        this.deviceName = deviceName;
-        this.currentUsername = username;
-        
-        // 更新UI
-        deviceNameLabel.setText(deviceName);
-        deviceIdLabel.setText(String.valueOf(deviceId));
+    public void setDevice(Device device) {
+        this.device = device;
+        deviceNameLabel.setText(device.getName());
+        deviceIdLabel.setText(String.valueOf(device.getId()));
     }
     
     @FXML
@@ -88,8 +87,13 @@ public class BorrowRequestController implements Initializable {
         
         String purpose = purposeTextArea.getText().trim();
         
-        // TODO: 保存借用申请到数据库
-        boolean success = true; // 模拟提交成功
+        // 获取当前登录用户
+        SessionManager sessionManager = SessionManager.getInstance();
+        String username = sessionManager.getCurrentUsername();
+        int userId = service.getUserByUsername(username).getId();
+        
+        // 创建借用申请
+        boolean success = service.addBorrowRequest(device.getId(), userId, borrowDate, returnDate, purpose);
         
         if (success) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);

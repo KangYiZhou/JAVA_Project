@@ -65,5 +65,19 @@ public class DeviceDAO {
         }
     }
 
+    public boolean deleteDevice(int deviceId) {
+        String sql = "DELETE FROM devices WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, deviceId);
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // 其他数据库操作方法，如更新设备信息、删除设备等
 }
